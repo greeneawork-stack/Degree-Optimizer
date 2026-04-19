@@ -16,6 +16,18 @@ export async function saveAppState(state: AppState) {
   return (await response.json()) as AppState;
 }
 
+export async function fetchAppState() {
+  const response = await fetch("/api/state", {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load application state.");
+  }
+
+  return (await response.json()) as AppState;
+}
+
 export async function updateAppState(state: AppState) {
   return saveAppState(state);
 }

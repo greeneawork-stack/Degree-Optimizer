@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { Route } from "next";
 import type { PropsWithChildren } from "react";
 
 const navigation = [
@@ -9,7 +10,7 @@ const navigation = [
   { href: "/onboarding", label: "Onboarding" },
   { href: "/progress", label: "Progress" },
   { href: "/dashboard", label: "Dashboard" },
-];
+] as const satisfies ReadonlyArray<{ href: Route; label: string }>;
 
 type LayoutShellProps = PropsWithChildren<{
   title?: string;
