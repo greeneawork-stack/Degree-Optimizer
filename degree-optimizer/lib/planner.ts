@@ -4,8 +4,10 @@ import type {
   CompletionSummary,
   Course,
   CourseScore,
+  ElectiveSection,
   GraduationRequirementStatus,
   OptimizationResult,
+  PlannerResult,
   ProgramRequirementGroup,
   RequirementItem,
   ScoredCourse,
@@ -16,6 +18,7 @@ const DEFAULT_BASIC_UNITS = 15;
 const DEFAULT_OPTIMIZED_UNITS = 18;
 const MAX_MAJOR_CORE_PER_TERM = 2;
 const MAX_SEMESTERS = 12;
+const DEFAULT_VISIBLE_ELECTIVES = 8;
 
 function safeArray<T>(value: T[] | undefined | null): T[] {
   return Array.isArray(value) ? value : [];
@@ -63,14 +66,16 @@ function buildGraduationStatuses(state: AppState): GraduationRequirementStatus[]
   return [
     {
       id: "total-units",
-      label: "120 total units",
+      label: "120 total units required to graduate",
+      explanation: "Complete at least 120 units across GE, major, minor, and electives.",
       completed: state.completedUnits ?? 0,
       required: catalog.graduationRules.minimumTotalUnits,
       remaining: Math.max(catalog.graduationRules.minimumTotalUnits - (state.completedUnits ?? 0), 0),
     },
     {
       id: "upper-division-units",
-      label: "39 upper-division units",
+      label: "39 upper-division units required",
+      explanation: "These are advanced 100-level or upper-division courses.",
       completed: state.completedUpperDivisionUnits ?? 0,
       required: catalog.graduationRules.minimumUpperDivisionUnits,
       remaining: Math.max(
@@ -80,14 +85,16 @@ function buildGraduationStatuses(state: AppState): GraduationRequirementStatus[]
     },
     {
       id: "sac-state-units",
-      label: "30 Sacramento State units",
+      label: "30 units must be completed at Sacramento State",
+      explanation: "Residency requirement counting Sacramento State coursework.",
       completed: state.completedSacStateUnits ?? 0,
       required: catalog.graduationRules.minimumSacStateUnits,
       remaining: Math.max(catalog.graduationRules.minimumSacStateUnits - (state.completedSacStateUnits ?? 0), 0),
     },
     {
       id: "sac-state-upper-division-units",
-      label: "24 Sacramento State upper-division units",
+      label: "24 upper-division Sacramento State units required",
+      explanation: "Advanced residency units completed at Sacramento State.",
       completed: state.completedSacStateUpperDivisionUnits ?? 0,
       required: catalog.graduationRules.minimumSacStateUpperDivisionUnits,
       remaining: Math.max(
@@ -97,6 +104,26 @@ function buildGraduationStatuses(state: AppState): GraduationRequirementStatus[]
       ),
     },
   ];
+}
+
+function getCourseDisplayTags(course: Course, score: CourseScore) {
+  const tags = new Set<string>();
+
+  if (score.coversRequiredMajor) {
+    tags.add("Major");
+  }
+  if (score.coversUniversity || score.gePoints > 0) {
+    tags.add("GE");
+  }
+  if (score.coversRequiredMajor && (score.coversUniversity || score.gePoints > 0)) {
+    tags.add("Both");
+  }
+
+  if (safeArray(course.tags).includes("Outside Department")) {
+    tags.add("External");
+  }
+
+  return Array.from(tags);
 }
 
 export function scoreCourse(
@@ -153,12 +180,7 @@ function buildScoredCourseList(state: AppState): ScoredCourse[] {
   const minorLookup = buildRequirementLookup(minorGroups);
   const universityLookup = buildRequirementLookup(universityGroups);
   const geLookup = buildRequirementLookup(geGroups);
-  const allRequirementLookup = new Map([
-    ...majorLookup,
-    ...minorLookup,
-    ...universityLookup,
-    ...geLookup,
-  ]);
+  const allRequirementLookup = new Map([...majorLookup, ...minorLookup, ...universityLookup, ...geLookup]);
 
   return safeArray(catalog.courses)
     .map((course) => {
@@ -284,6 +306,46 @@ function buildSchedule(state: AppState, scoredCourses: ScoredCourse[], requested
   return semesters;
 }
 
+function buildElectiveSections(scoredCourses: ScoredCourse[]): ElectiveSection[] {
+  const electiveCourses = safeArray(scoredCourses).filter((course) =>
+    course.coveredRequirementLabels.some((label) => /elective/i.test(label)),
+  );
+
+  const politicalScienceElectives = electiveCourses.filter((course) => course.department === "POLS");
+  const externalElectives = electiveCourses.filter((course) => course.department !== "POLS");
+
+  return [
+    {
+      id: "pols-electives",
+      title: "Political Science Electives",
+      description: "Recommended POLS electives that continue major or minor progress.",
+      requiredUnitsLabel: "You need elective units in Political Science.",
+      courses: politicalScienceElectives.slice(0, DEFAULT_VISIBLE_ELECTIVES).map((course) => ({
+        code: course.code,
+        title: course.title,
+        units: course.units,
+        tags: getCourseDisplayTags(course, course.score),
+      })),
+      totalCourseCount: politicalScienceElectives.length,
+      hasMore: politicalScienceElectives.length > DEFAULT_VISIBLE_ELECTIVES,
+    },
+    {
+      id: "external-electives",
+      title: "Approved External Electives",
+      description: "Approved outside-department options, especially useful for International Relations.",
+      requiredUnitsLabel: "Use approved external electives when your track allows them.",
+      courses: externalElectives.slice(0, DEFAULT_VISIBLE_ELECTIVES).map((course) => ({
+        code: course.code,
+        title: course.title,
+        units: course.units,
+        tags: getCourseDisplayTags(course, course.score),
+      })),
+      totalCourseCount: externalElectives.length,
+      hasMore: externalElectives.length > DEFAULT_VISIBLE_ELECTIVES,
+    },
+  ].filter((section) => section.courses.length > 0 || section.totalCourseCount > 0);
+}
+
 export function estimateCompletion(state: AppState): CompletionSummary {
   const { degreePath, minor, majorGroups, minorGroups, geGroups, universityGroups } = getActiveRequirementGroups(state);
   const remainingMajor = getRemainingRequirements(majorGroups, state.completedRequirementIds);
@@ -335,33 +397,100 @@ export function buildOptimization(state: AppState): OptimizationResult {
       activeMinorName: minor?.name ?? "None",
       globalRules: safeArray(catalog.globalRules),
       plannerStatus: "locked",
+      plannerWarnings: [],
+      scheduleGenerated: false,
+      electiveSections: [],
     };
   }
 
+  return state.generatedPlan ?? {
+    completion,
+    basicSchedule: buildEmptyScheduleResult(),
+    optimizedSchedule: buildEmptyScheduleResult(),
+    fasterBySemesters: 0,
+    activeDegreePathName: degreePath.name,
+    activeMinorName: minor?.name ?? "None",
+    globalRules: safeArray(catalog.globalRules),
+    plannerStatus: "idle",
+    plannerWarnings: ["Generate Plan first to create a semester-by-semester schedule."],
+    scheduleGenerated: false,
+    electiveSections: [],
+  };
+}
+
+export function buildPlanSummary(state: AppState): PlannerResult {
+  const completion = estimateCompletion(state);
+  const degreePath = getSelectedDegreePath(state.degreePathId);
+  const minor = getSelectedMinor(state.minorId);
   const scoredCourses = buildScoredCourseList(state);
-  const basicSchedule = buildSchedule(
-    state,
-    scoredCourses,
-    Math.min(clampUnits(state.preferredMaxUnitsPerTerm), DEFAULT_BASIC_UNITS),
-  );
-  const optimizedSchedule = buildSchedule(
-    state,
-    scoredCourses,
-    Math.min(clampUnits(state.preferredMaxUnitsPerTerm + 3), DEFAULT_OPTIMIZED_UNITS),
-  );
+  const generatedPlan = state.generatedPlan;
 
   return {
     completion: {
       ...completion,
-      estimatedSemestersRemaining: Math.max(basicSchedule.length, 0),
+      estimatedSemestersRemaining:
+        state.mode === "premium" && generatedPlan?.scheduleGenerated
+          ? generatedPlan.completion.estimatedSemestersRemaining
+          : completion.estimatedSemestersRemaining,
     },
-    basicSchedule,
-    optimizedSchedule,
-    fasterBySemesters: Math.max(basicSchedule.length - optimizedSchedule.length, 0),
     activeDegreePathName: degreePath.name,
     activeMinorName: minor?.name ?? "None",
     globalRules: safeArray(catalog.globalRules),
-    plannerStatus: optimizedSchedule.length > 0 ? "ready" : "partial",
+    fasterBySemesters:
+      state.mode === "premium" && generatedPlan?.scheduleGenerated
+        ? generatedPlan.fasterBySemesters
+        : Math.max(Math.min(completion.remainingMajor.length + completion.remainingMinor.length, 2), 1),
+    basicSchedule: state.mode === "premium" ? safeArray(generatedPlan?.basicSchedule) : [],
+    optimizedSchedule: state.mode === "premium" ? safeArray(generatedPlan?.optimizedSchedule) : [],
+    scheduleGenerated: Boolean(state.mode === "premium" && generatedPlan?.scheduleGenerated),
+    plannerWarnings: safeArray(generatedPlan?.plannerWarnings),
+    plannerStatus:
+      state.mode === "premium"
+        ? generatedPlan?.plannerStatus ?? "idle"
+        : "locked",
+    electiveSections: buildElectiveSections(scoredCourses),
+  };
+}
+
+export function generatePlanSnapshot(state: AppState): PlannerResult {
+  const completion = estimateCompletion(state);
+  const degreePath = getSelectedDegreePath(state.degreePathId);
+  const minor = getSelectedMinor(state.minorId);
+  const scoredCourses = buildScoredCourseList(state);
+  const basicSchedule = buildSchedule(
+    state,
+    scoredCourses,
+    clampUnits(state.preferredMaxUnitsPerTerm),
+  );
+  const optimizedSchedule = buildSchedule(
+    state,
+    scoredCourses,
+    Math.min(clampUnits(state.preferredMaxUnitsPerTerm + 2), DEFAULT_OPTIMIZED_UNITS),
+  );
+  const plannerWarnings: string[] = [];
+
+  if (basicSchedule.length === 0) {
+    plannerWarnings.push("No eligible schedule could be generated from the current remaining requirements.");
+  }
+
+  if (optimizedSchedule.length >= MAX_SEMESTERS) {
+    plannerWarnings.push("The generated plan reached the semester cap and may be incomplete.");
+  }
+
+  return {
+    completion: {
+      ...completion,
+      estimatedSemestersRemaining: basicSchedule.length,
+    },
+    activeDegreePathName: degreePath.name,
+    activeMinorName: minor?.name ?? "None",
+    globalRules: safeArray(catalog.globalRules),
+    fasterBySemesters: Math.max(basicSchedule.length - optimizedSchedule.length, 0),
+    basicSchedule,
+    optimizedSchedule,
+    scheduleGenerated: basicSchedule.length > 0,
+    plannerWarnings,
+    electiveSections: buildElectiveSections(scoredCourses),
   };
 }
 

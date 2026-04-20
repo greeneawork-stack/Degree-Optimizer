@@ -1,4 +1,4 @@
-import type { AppState, OptimizationResult, PetitionFormValues } from "@/lib/types";
+import type { AppState, PlannerResult, PetitionFormValues } from "@/lib/types";
 
 export async function saveAppState(state: AppState) {
   const response = await fetch("/api/state", {
@@ -29,7 +29,10 @@ export async function fetchAppState() {
 }
 
 export async function updateAppState(state: AppState) {
-  return saveAppState(state);
+  return saveAppState({
+    ...state,
+    generatedPlan: null,
+  });
 }
 
 export async function fetchOptimization() {
@@ -41,7 +44,7 @@ export async function fetchOptimization() {
     throw new Error("Failed to load degree plan.");
   }
 
-  return (await response.json()) as OptimizationResult;
+  return (await response.json()) as PlannerResult;
 }
 
 export async function setUnlockedPlan(unlocked: boolean) {
@@ -80,4 +83,17 @@ export async function generatePetitionDraft(payload: PetitionFormValues) {
   }
 
   return (await response.json()) as { emailDraft: string };
+}
+
+export async function generatePlan() {
+  const response = await fetch("/api/plan", {
+    method: "POST",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to generate degree plan.");
+  }
+
+  return (await response.json()) as PlannerResult;
 }

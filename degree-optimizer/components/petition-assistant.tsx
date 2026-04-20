@@ -16,8 +16,11 @@ export default function PetitionAssistant({
   minorLabel,
 }: PetitionAssistantProps) {
   const [gpa, setGpa] = useState("3.4");
-  const [workHours, setWorkHours] = useState("20");
-  const [graduationGoal, setGraduationGoal] = useState(defaultGraduationGoal);
+  const [workHoursPerWeek, setWorkHoursPerWeek] = useState("20");
+  const [workType, setWorkType] = useState("Part-time job");
+  const [targetGraduationTerm, setTargetGraduationTerm] = useState(defaultGraduationGoal);
+  const [petitionReason, setPetitionReason] = useState("graduate early");
+  const [additionalContext, setAdditionalContext] = useState("");
   const [emailDraft, setEmailDraft] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -28,8 +31,11 @@ export default function PetitionAssistant({
     try {
       const result = await generatePetitionDraft({
         gpa,
-        workHours,
-        graduationGoal,
+        workHoursPerWeek,
+        workType,
+        targetGraduationTerm,
+        petitionReason,
+        additionalContext,
         degreePathName: degreeLabel,
         minorName: minorLabel,
       });
@@ -66,22 +72,56 @@ export default function PetitionAssistant({
         </label>
 
         <label className="grid gap-2 text-sm text-slate-700">
-          Work hours per week
+          Work hours per week (job/work commitments)
           <input
             className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none ring-0 transition focus:border-sky-400 focus:bg-white"
-            value={workHours}
-            onChange={(event) => setWorkHours(event.target.value)}
+            value={workHoursPerWeek}
+            onChange={(event) => setWorkHoursPerWeek(event.target.value)}
             placeholder="20"
           />
         </label>
 
         <label className="grid gap-2 text-sm text-slate-700">
-          Graduation goal
+          Type of work
           <input
             className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none ring-0 transition focus:border-sky-400 focus:bg-white"
-            value={graduationGoal}
-            onChange={(event) => setGraduationGoal(event.target.value)}
-            placeholder="Graduate by Spring 2028"
+            value={workType}
+            onChange={(event) => setWorkType(event.target.value)}
+            placeholder="Part-time job, internship, family responsibility"
+          />
+        </label>
+
+        <label className="grid gap-2 text-sm text-slate-700">
+          Target graduation term/year
+          <input
+            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none ring-0 transition focus:border-sky-400 focus:bg-white"
+            value={targetGraduationTerm}
+            onChange={(event) => setTargetGraduationTerm(event.target.value)}
+            placeholder="Spring 2028"
+          />
+        </label>
+
+        <label className="grid gap-2 text-sm text-slate-700 md:col-span-3">
+          Reason for petition
+          <select
+            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-sky-400 focus:bg-white"
+            value={petitionReason}
+            onChange={(event) => setPetitionReason(event.target.value)}
+          >
+            <option value="overload units">Overload units</option>
+            <option value="graduate early">Graduate early</option>
+            <option value="scheduling conflict">Scheduling conflict</option>
+            <option value="academic acceleration">Academic acceleration</option>
+          </select>
+        </label>
+
+        <label className="grid gap-2 text-sm text-slate-700 md:col-span-3">
+          Additional context
+          <textarea
+            className="min-h-28 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none ring-0 transition focus:border-sky-400 focus:bg-white"
+            value={additionalContext}
+            onChange={(event) => setAdditionalContext(event.target.value)}
+            placeholder="Add any other context you want included, such as family responsibilities, course availability issues, or academic goals."
           />
         </label>
 

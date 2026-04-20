@@ -106,6 +106,7 @@ export type AppState = {
   completedUpperDivisionUnits: number;
   completedSacStateUnits: number;
   completedSacStateUpperDivisionUnits: number;
+  generatedPlan: PlannerResult | null;
 };
 
 export type CourseScore = {
@@ -142,6 +143,7 @@ export type SemesterPlan = {
 export type GraduationRequirementStatus = {
   id: string;
   label: string;
+  explanation?: string;
   completed: number;
   required: number;
   remaining: number;
@@ -174,6 +176,23 @@ export type OptimizationResult = {
   plannerStatus: "idle" | "locked" | "ready" | "partial";
 };
 
+export type ElectiveCoursePreview = {
+  code: string;
+  title: string;
+  units: number;
+  tags: string[];
+};
+
+export type ElectiveSection = {
+  id: string;
+  title: string;
+  description: string;
+  requiredUnitsLabel: string;
+  courses: ElectiveCoursePreview[];
+  totalCourseCount: number;
+  hasMore: boolean;
+};
+
 export type PlannerResult = {
   completion: CompletionSummary;
   activeDegreePathName: string;
@@ -184,12 +203,15 @@ export type PlannerResult = {
   optimizedSchedule: SemesterPlan[];
   scheduleGenerated: boolean;
   plannerWarnings: string[];
+  electiveSections: ElectiveSection[];
 };
 
 export type PetitionFormValues = {
   gpa: string;
   workHours: string;
-  graduationGoal: string;
+  workType: string;
+  targetGraduationTerm: string;
+  petitionReason: string;
   degreePathName: string;
   minorName: string;
 };

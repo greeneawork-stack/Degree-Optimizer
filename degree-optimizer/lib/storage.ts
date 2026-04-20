@@ -2,9 +2,10 @@ import { promises as fs } from "fs";
 import path from "path";
 
 import { defaultAppState } from "@/data/catalog";
-import type { AppState } from "@/lib/types";
+import type { AppState, PlannerResult } from "@/lib/types";
 
 const dataFilePath = path.join(process.cwd(), "data", "progress.json");
+const planFilePath = path.join(process.cwd(), "data", "generated-plan.json");
 
 function clampUnits(value: unknown) {
   if (typeof value !== "number" || Number.isNaN(value)) {
@@ -40,6 +41,7 @@ function sanitizeState(raw: Partial<AppState> | undefined): AppState {
       typeof raw?.completedSacStateUpperDivisionUnits === "number" && raw.completedSacStateUpperDivisionUnits >= 0
         ? raw.completedSacStateUpperDivisionUnits
         : defaultAppState.completedSacStateUpperDivisionUnits,
+    generatedPlan: raw?.generatedPlan ?? null,
   };
 }
 
@@ -56,4 +58,27 @@ export async function writeAppState(state: AppState): Promise<AppState> {
   const sanitized = sanitizeState(state);
   await fs.writeFile(dataFilePath, JSON.stringify(sanitized, null, 2), "utf8");
   return sanitized;
+}
+
+export async function readGeneratedPlan(): Promise<PlannerResult | null> {
+  try {
+    const raw = await fs.readFile(planFilePath, "utf8");
+    const parsed = JSON.parse(raw) as PlannerResult;
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function writeGeneratedPlan(plan: PlannerResult): Promise<PlannerResult> {
+  await fs.writeFile(planFilePath, JSON.stringify(plan, null, 2), "utf8");
+  return plan;
+}
+
+export async function clearGeneratedPlan(): Promise<void> {
+  try {
+    await fs.unlink(planFilePath);
+  } catch {
+    // Ignore missing plan file.
+  }
 }

@@ -10,8 +10,8 @@ import {
   getSelectedDegreePath,
   getSelectedMinor,
 } from "@/data/catalog";
-import { updateAppState } from "@/lib/actions";
-import type { AppState } from "@/lib/types";
+import { generatePlan, updateAppState } from "@/lib/actions";
+import type { AppState, ProgramRequirementGroup } from "@/lib/types";
 
 function NumberField({
   label,
@@ -36,6 +36,16 @@ function NumberField({
   );
 }
 
+function safeRequirementIds(groups: ProgramRequirementGroup[] | undefined) {
+  if (!Array.isArray(groups)) {
+    return [];
+  }
+
+  return groups.flatMap((group) =>
+    Array.isArray(group?.requirements) ? group.requirements.map((requirement) => requirement.id) : [],
+  );
+}
+
 type ProgressFormProps = {
   initialState: AppState;
 };
@@ -50,16 +60,10 @@ export default function ProgressForm({ initialState }: ProgressFormProps) {
 
   const allRequirementIds = useMemo(
     () => [
-      ...catalog.geRequirements.flatMap((group) => group.requirements.map((requirement) => requirement.id)),
-      ...catalog.universityRequirements.flatMap((group) =>
-        group.requirements.map((requirement) => requirement.id),
-      ),
-      ...selectedDegree.requirementGroups.flatMap((group) =>
-        group.requirements.map((requirement) => requirement.id),
-      ),
-      ...(selectedMinor?.requirementGroups.flatMap((group) =>
-        group.requirements.map((requirement) => requirement.id),
-      ) ?? []),
+      ...safeRequirementIds(catalog.geRequirements),
+      ...safeRequirementIds(catalog.universityRequirements),
+      ...safeRequirementIds(selectedDegree.requirementGroups),
+      ...safeRequirementIds(selectedMinor?.requirementGroups),
     ],
     [selectedDegree, selectedMinor],
   );
@@ -78,6 +82,7 @@ export default function ProgressForm({ initialState }: ProgressFormProps) {
 
     try {
       await updateAppState(progress);
+      await generatePlan(progress);
       router.push("/dashboard");
       router.refresh();
     } finally {

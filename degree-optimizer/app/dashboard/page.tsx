@@ -1,8 +1,49 @@
 import PetitionAssistant from "@/components/petition-assistant";
 import UnlockOptimizer from "@/components/unlock-optimizer";
-import { buildOptimization } from "@/lib/planner";
-import { readAppState } from "@/lib/storage";
-import type { GraduationRequirementStatus, RequirementItem, SemesterPlan } from "@/lib/types";
+import { buildOptimization, buildPlanSummary } from "@/lib/planner";
+import { readAppState, readGeneratedPlan } from "@/lib/storage";
+import type {
+  ElectiveDisplaySection,
+  GraduationRequirementStatus,
+  RequirementItem,
+  SemesterPlan,
+} from "@/lib/types";
+import type { ReactNode } from "react";
+
+function CollapsibleCard({
+  title,
+  itemCount,
+  children,
+  defaultVisible = 6,
+}: {
+  title: string;
+  itemCount: number;
+  children: (expanded: boolean, visibleCount: number) => ReactNode;
+  defaultVisible?: number;
+}) {
+  const shouldCollapse = itemCount > defaultVisible;
+  const expanded = false;
+  const visibleCount = shouldCollapse ? defaultVisible : itemCount;
+
+  return (
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-xl font-semibold text-slate-950">{title}</h2>
+        {shouldCollapse ? (
+          <div className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
+            Showing {visibleCount} of {itemCount}
+          </div>
+        ) : null}
+      </div>
+      <div className="mt-4">{children(expanded, visibleCount)}</div>
+      {shouldCollapse ? (
+        <p className="mt-3 text-xs text-slate-500">
+          Large sections are intentionally limited on first render to keep navigation smooth.
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
 function ProgressSummary({
   completion,
@@ -58,6 +99,59 @@ function ProgressSummary({
   );
 }
 
+function DegreeRequirementsExplainer({ statuses }: { statuses: GraduationRequirementStatus[] }) {
+  const safeStatuses = Array.isArray(statuses) ? statuses : [];
+  const statusMap = new Map(safeStatuses.map((status) => [status.id, status]));
+
+  const rows = [
+    {
+      id: "total-units",
+      headline: "120 units required to graduate",
+      explanation: "This is the full unit total required for a Sacramento State degree.",
+    },
+    {
+      id: "upper-division-units",
+      headline: "39 upper-division units required",
+      explanation: "Upper-division courses are advanced 100-level or higher courses in this planner.",
+    },
+    {
+      id: "sac-state-units",
+      headline: "30 units must be completed at Sacramento State",
+      explanation: "These units must be earned in residence at Sacramento State.",
+    },
+    {
+      id: "sac-state-upper-division-units",
+      headline: "24 upper-division units must be completed at Sacramento State",
+      explanation: "This is the upper-division residency requirement.",
+    },
+  ];
+
+  return (
+    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="flex flex-col gap-2">
+        <h2 className="text-xl font-semibold text-slate-950">Total Degree Requirements</h2>
+        <p className="text-sm text-slate-600">
+          These are the university-wide degree rules that apply alongside your major, GE, and optional minor.
+        </p>
+      </div>
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
+        {rows.map((row) => {
+          const status = statusMap.get(row.id);
+          return (
+            <article key={row.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-semibold text-slate-900">{row.headline}</p>
+              <p className="mt-2 text-sm text-slate-600">{row.explanation}</p>
+              <p className="mt-3 text-sm font-medium text-slate-900">
+                Current progress: {status?.completed ?? 0} / {status?.required ?? 0}
+              </p>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function RequirementList({
   title,
   requirements,
@@ -68,21 +162,73 @@ function RequirementList({
   const safeRequirements = Array.isArray(requirements) ? requirements : [];
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-semibold text-slate-950">{title}</h2>
-      {safeRequirements.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-500">No remaining items in this section.</p>
-      ) : (
-        <ul className="mt-4 space-y-3 text-sm text-slate-600">
-          {safeRequirements.map((requirement) => (
-            <li key={requirement.id} className="rounded-2xl bg-slate-50 px-4 py-3">
-              <div className="font-medium text-slate-900">{requirement.label}</div>
-              <div className="mt-1 text-xs text-slate-500">{requirement.description}</div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    <CollapsibleCard title={title} itemCount={safeRequirements.length}>
+      {(_expanded, visibleCount) =>
+        safeRequirements.length === 0 ? (
+          <p className="text-sm text-slate-500">No remaining items in this section.</p>
+        ) : (
+          <ul className="space-y-3 text-sm text-slate-600">
+            {safeRequirements.slice(0, visibleCount).map((requirement) => (
+              <li key={requirement.id} className="rounded-2xl bg-slate-50 px-4 py-3">
+                <div className="font-medium text-slate-900">{requirement.label}</div>
+                <div className="mt-1 text-xs text-slate-500">{requirement.description}</div>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </CollapsibleCard>
+  );
+}
+
+function ElectivesSection({ sections }: { sections: ElectiveDisplaySection[] }) {
+  const safeSections = Array.isArray(sections) ? sections : [];
+
+  return (
+    <section className="grid gap-6 xl:grid-cols-2">
+      {safeSections.map((section) => {
+        const courses = Array.isArray(section.courses) ? section.courses : [];
+
+        return (
+          <CollapsibleCard key={section.id} title={section.title} itemCount={courses.length}>
+            {(_expanded, visibleCount) => (
+              <div>
+                <p className="text-sm text-slate-600">{section.description}</p>
+                <p className="mt-2 text-sm font-medium text-slate-900">{section.requiredUnitsLabel}</p>
+                {courses.length === 0 ? (
+                  <p className="mt-4 text-sm text-slate-500">No data available.</p>
+                ) : (
+                  <ul className="mt-4 space-y-3">
+                    {courses.slice(0, visibleCount).map((course) => (
+                      <li key={course.code} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <p className="font-medium text-slate-900">
+                              {course.code}: {course.title}
+                            </p>
+                            <p className="mt-1 text-sm text-slate-600">{course.units} units</p>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {(Array.isArray(course.badges) ? course.badges : []).map((badge) => (
+                              <span
+                                key={badge}
+                                className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700"
+                              >
+                                {badge}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </CollapsibleCard>
+        );
+      })}
+    </section>
   );
 }
 
@@ -189,8 +335,11 @@ function ScheduleCard({
 
 export default async function DashboardPage() {
   const state = await readAppState();
-  const optimization = buildOptimization(state);
-  const completion = optimization.completion;
+  const savedPlan = await readGeneratedPlan();
+  const hydratedState = savedPlan ? { ...state, generatedPlan: savedPlan } : state;
+  const summary = buildPlanSummary(hydratedState);
+  const optimization = state.mode === "premium" ? buildOptimization(hydratedState) : undefined;
+  const completion = summary.completion;
   const isPremium = state.mode === "premium";
 
   return (
@@ -199,8 +348,8 @@ export default async function DashboardPage() {
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-50/90">Dashboard</p>
         <h1 className="mt-4 text-3xl font-semibold sm:text-4xl">Your Degree Optimizer snapshot</h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-emerald-50/90 sm:text-base">
-          Review your remaining GE, university, major, and minor requirements. Upgrade to the optimized planning view
-          to unlock semester-by-semester scheduling and unit-balancing logic.
+          Review your remaining GE, university, major, and minor requirements. Generate a plan only when you are ready,
+          and unlock premium mode to view semester-by-semester scheduling.
         </p>
       </section>
 
@@ -215,6 +364,7 @@ export default async function DashboardPage() {
         minorUnitsRequired={completion.minorUnitsRequired}
       />
 
+      <DegreeRequirementsExplainer statuses={completion.graduationRequirements} />
       <GraduationRulesCard statuses={completion.graduationRequirements} />
 
       <section className="grid gap-6 xl:grid-cols-2">
@@ -224,12 +374,14 @@ export default async function DashboardPage() {
         <RequirementList title="Remaining university requirements" requirements={completion.remainingUniversity} />
       </section>
 
+      <ElectivesSection sections={summary.electiveSections} />
+
       {isPremium ? (
         <>
           <ScheduleCard
             title="Optimized Schedule"
             description="Semester-by-semester planning is available in premium mode and balances core requirements, overlaps, and unit pacing."
-            schedule={optimization.optimizedSchedule}
+            schedule={optimization?.optimizedSchedule ?? []}
           />
 
           <PetitionAssistant
@@ -240,7 +392,7 @@ export default async function DashboardPage() {
         </>
       ) : (
         <UnlockOptimizer
-          fasterBySemesters={optimization.fasterBySemesters}
+          fasterBySemesters={summary.fasterBySemesters}
           preferredMaxUnitsPerTerm={state.preferredMaxUnitsPerTerm}
           preferFewerDaysOnCampus={state.preferFewerDaysOnCampus}
           isPremium={false}
