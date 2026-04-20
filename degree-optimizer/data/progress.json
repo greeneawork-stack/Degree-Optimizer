@@ -1,13 +1,28 @@
 {
   "schoolId": "csus",
   "schoolName": "California State University, Sacramento",
-  "degreePathId": "political-science-ba",
-  "degreePathName": "Political Science (BA)",
+  "degreePathId": "political-science-journalism",
+  "degreePathName": "Political Science – Journalism",
   "minorId": "none",
   "minorName": "None",
-  "completedRequirementIds": [],
+  "mode": "free",
+  "completedRequirementIds": [
+    "GE-A1",
+    "GE-A2",
+    "GE-B4",
+    "GE-D",
+    "IR-POLS-1",
+    "UNI-AMERICAN-INSTITUTIONS",
+    "UNI-RACE-ETHNICITY",
+    "GE-B2",
+    "GE-A3"
+  ],
   "unlockedOptimizedPlan": false,
-  "usedAutoFill": false,
-  "preferredMaxUnitsPerTerm": 15,
-  "preferFewerDaysOnCampus": false
+  "usedAutoFill": true,
+  "preferredMaxUnitsPerTerm": 18,
+  "preferFewerDaysOnCampus": true,
+  "completedUnits": 60,
+  "completedUpperDivisionUnits": 3,
+  "completedSacStateUnits": 21,
+  "completedSacStateUpperDivisionUnits": 3
 }

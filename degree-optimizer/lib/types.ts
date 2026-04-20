@@ -96,6 +96,7 @@ export type AppState = {
   degreePathName: string;
   minorId: string;
   minorName: string;
+  mode: "free" | "premium";
   completedRequirementIds: string[];
   unlockedOptimizedPlan: boolean;
   usedAutoFill: boolean;
@@ -170,6 +171,18 @@ export type OptimizationResult = {
   activeDegreePathName: string;
   activeMinorName: string;
   globalRules: GlobalRule[];
+};
+
+export type PlannerResult = {
+  completion: CompletionSummary;
+  activeDegreePathName: string;
+  activeMinorName: string;
+  globalRules: GlobalRule[];
+  fasterBySemesters: number;
+  basicSchedule: SemesterPlan[];
+  optimizedSchedule: SemesterPlan[];
+  scheduleGenerated: boolean;
+  plannerWarnings: string[];
 };
 
 export type PetitionFormValues = {

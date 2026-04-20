@@ -44,17 +44,22 @@ export default function ProgressChecklist({
   setProgress,
   emptyMessage = "No requirements are currently loaded for this section.",
 }: ProgressChecklistProps) {
+  const safeGroups = Array.isArray(groups) ? groups : [];
+  const completedRequirementIds = Array.isArray(progress.completedRequirementIds)
+    ? progress.completedRequirementIds
+    : [];
+
   return (
     <div>
       <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
       <div className="mt-5 space-y-5">
-        {groups.length === 0 ? (
+        {safeGroups.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
             {emptyMessage}
           </div>
         ) : null}
 
-        {groups.map((group) => (
+        {safeGroups.map((group) => (
           <section key={group.id}>
             <h3 className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
               {group.title}
@@ -63,8 +68,8 @@ export default function ProgressChecklist({
               <p className="mb-3 text-sm text-slate-500">{group.description}</p>
             ) : null}
             <div className="space-y-3">
-              {group.requirements.map((requirement) => {
-                const isChecked = progress.completedRequirementIds.includes(requirement.id);
+              {(Array.isArray(group.requirements) ? group.requirements : []).map((requirement) => {
+                const isChecked = completedRequirementIds.includes(requirement.id);
 
                 return (
                   <label

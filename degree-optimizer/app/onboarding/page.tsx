@@ -47,7 +47,7 @@ export default function OnboardingPage() {
               id="schoolName"
               name="schoolName"
               defaultValue={catalog.school.name}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-indigo-400 focus:bg-white"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-sky-400 focus:bg-white"
             />
           </div>
 
@@ -59,7 +59,7 @@ export default function OnboardingPage() {
               id="degreePathId"
               name="degreePathId"
               defaultValue={defaultAppState.degreePathId}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-indigo-400 focus:bg-white"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-sky-400 focus:bg-white"
             >
               {catalog.degreePaths.map((path) => (
                 <option key={path.id} value={path.id}>
@@ -77,7 +77,7 @@ export default function OnboardingPage() {
               id="minorId"
               name="minorId"
               defaultValue="none"
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-indigo-400 focus:bg-white"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-sky-400 focus:bg-white"
             >
               <option value="none">None</option>
               {catalog.minors.map((minor) => (
@@ -90,7 +90,7 @@ export default function OnboardingPage() {
 
           <button
             type="submit"
-            className="inline-flex w-full items-center justify-center rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            className="inline-flex w-full items-center justify-center rounded-full bg-sky-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-sky-400 focus:bg-sky-400"
           >
             Continue
           </button>

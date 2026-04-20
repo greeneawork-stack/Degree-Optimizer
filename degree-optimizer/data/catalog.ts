@@ -1026,6 +1026,7 @@ export const defaultAppState: AppState = {
   degreePathName: politicalScienceBa.name,
   minorId: "none",
   minorName: "None",
+  mode: "free",
   completedRequirementIds: [],
   unlockedOptimizedPlan: false,
   usedAutoFill: false,
@@ -1059,6 +1060,7 @@ export function getAutoFillState(degreePathId: string, minorId: string): AppStat
     degreePathName: degreePath.name,
     minorId: minor?.id ?? "none",
     minorName: minor?.name ?? "None",
+    mode: "free",
     completedRequirementIds: [
       ...(catalog.autoFillCompletedRequirementIdsByDegree[degreePath.id] ?? []),
       ...((minor && catalog.autoFillMinorRequirementIdsByMinor[minor.id]) ?? []),

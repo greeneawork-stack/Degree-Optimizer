@@ -20,7 +20,7 @@ export default function HomePage() {
         <div className="flex flex-wrap items-center gap-4">
           <Link
             href="/onboarding"
-            className="inline-flex items-center justify-center rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+            className="inline-flex items-center justify-center rounded-full bg-sky-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-sky-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
           >
             Get Started
           </Link>

@@ -58,7 +58,12 @@ export async function setUnlockedPlan(unlocked: boolean) {
   return saveAppState({
     ...currentState,
     unlockedOptimizedPlan: unlocked,
+    mode: unlocked ? "premium" : currentState.mode,
   });
+}
+
+export async function enablePremiumMode() {
+  return setUnlockedPlan(true);
 }
 
 export async function generatePetitionDraft(payload: PetitionFormValues) {
