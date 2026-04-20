@@ -6,9 +6,15 @@ import { generatePetitionDraft } from "@/lib/actions";
 
 type PetitionAssistantProps = {
   defaultGraduationGoal: string;
+  degreeLabel: string;
+  minorLabel: string;
 };
 
-export default function PetitionAssistant({ defaultGraduationGoal }: PetitionAssistantProps) {
+export default function PetitionAssistant({
+  defaultGraduationGoal,
+  degreeLabel,
+  minorLabel,
+}: PetitionAssistantProps) {
   const [gpa, setGpa] = useState("3.4");
   const [workHours, setWorkHours] = useState("20");
   const [graduationGoal, setGraduationGoal] = useState(defaultGraduationGoal);
@@ -24,6 +30,8 @@ export default function PetitionAssistant({ defaultGraduationGoal }: PetitionAss
         gpa,
         workHours,
         graduationGoal,
+        degreePathName: degreeLabel,
+        minorName: minorLabel,
       });
       setEmailDraft(result.emailDraft);
     } finally {
@@ -42,7 +50,7 @@ export default function PetitionAssistant({ defaultGraduationGoal }: PetitionAss
         </h2>
         <p className="mt-2 max-w-2xl text-sm text-slate-600">
           Draft an email asking for course sequencing advice, a unit exception, or support for an accelerated
-          graduation plan.
+          graduation plan for your {degreeLabel} pathway.
         </p>
       </div>
 
@@ -50,7 +58,7 @@ export default function PetitionAssistant({ defaultGraduationGoal }: PetitionAss
         <label className="grid gap-2 text-sm text-slate-700">
           GPA
           <input
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none ring-0 transition focus:border-indigo-400"
+            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none ring-0 transition focus:border-sky-400 focus:bg-white"
             value={gpa}
             onChange={(event) => setGpa(event.target.value)}
             placeholder="3.4"
@@ -60,7 +68,7 @@ export default function PetitionAssistant({ defaultGraduationGoal }: PetitionAss
         <label className="grid gap-2 text-sm text-slate-700">
           Work hours per week
           <input
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none ring-0 transition focus:border-indigo-400"
+            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none ring-0 transition focus:border-sky-400 focus:bg-white"
             value={workHours}
             onChange={(event) => setWorkHours(event.target.value)}
             placeholder="20"
@@ -70,7 +78,7 @@ export default function PetitionAssistant({ defaultGraduationGoal }: PetitionAss
         <label className="grid gap-2 text-sm text-slate-700">
           Graduation goal
           <input
-            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none ring-0 transition focus:border-indigo-400"
+            className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none ring-0 transition focus:border-sky-400 focus:bg-white"
             value={graduationGoal}
             onChange={(event) => setGraduationGoal(event.target.value)}
             placeholder="Graduate by Spring 2028"
@@ -80,7 +88,7 @@ export default function PetitionAssistant({ defaultGraduationGoal }: PetitionAss
         <div className="md:col-span-3">
           <button
             type="submit"
-            className="inline-flex items-center justify-center rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            className="inline-flex items-center justify-center rounded-full bg-sky-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-400 focus:bg-sky-400"
           >
             {isLoading ? "Generating..." : "Generate email draft"}
           </button>

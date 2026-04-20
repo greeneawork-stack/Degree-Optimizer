@@ -35,7 +35,9 @@ export function LayoutShell({ children, title, description }: LayoutShellProps) 
                   key={item.href}
                   href={item.href}
                   className={`rounded-full px-3 py-1.5 transition ${
-                    active ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
+                    active
+                      ? "bg-sky-500 text-white shadow-sm"
+                      : "text-slate-600 hover:bg-sky-50 hover:text-sky-700"
                   }`}
                 >
                   {item.label}

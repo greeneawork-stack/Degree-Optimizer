@@ -12,15 +12,15 @@ export default function HomePage() {
             Plan smarter. Graduate faster.
           </h1>
           <p className="max-w-2xl text-lg text-slate-600">
-            Degree Optimizer helps Sacramento State Political Science students map their remaining GE and
-            major requirements into a practical graduation plan, then preview an overlap-aware path to finish
+            Degree Optimizer helps Sacramento State students compare Political Science degree paths, add an
+            optional minor, map real graduation requirements, and preview an overlap-aware path to finish
             sooner.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
           <Link
             href="/onboarding"
-            className="inline-flex items-center justify-center rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+            className="inline-flex items-center justify-center rounded-full bg-sky-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-sky-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
           >
             Get Started
           </Link>
@@ -38,13 +38,16 @@ export default function HomePage() {
           </div>
           <ul className="space-y-3 text-sm text-slate-600">
             <li className="rounded-2xl bg-slate-50 p-4">
-              Track GE areas and Political Science requirements with a manual checklist or simulated auto-fill.
+              Track GE, university graduation requirements, degree-path milestones, and an optional Political
+              Science minor with a manual checklist or simulated auto-fill.
             </li>
             <li className="rounded-2xl bg-slate-50 p-4">
-              See completion percentage, estimated semesters remaining, and a semester-by-semester basic plan.
+              See completion percentage, Sacramento State unit-rule progress, estimated semesters remaining, and
+              a semester-by-semester basic plan.
             </li>
             <li className="rounded-2xl bg-slate-50 p-4">
-              Unlock an optimized plan that prioritizes courses satisfying both GE and major requirements.
+              Unlock an optimized plan that prioritizes major requirements, overlap courses, upper-division
+              progress, and balanced semesters.
             </li>
           </ul>
         </div>
