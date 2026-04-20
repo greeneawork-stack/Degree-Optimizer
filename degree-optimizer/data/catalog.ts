@@ -1028,6 +1028,7 @@ export const defaultAppState: AppState = {
   minorName: "None",
   mode: "free",
   completedRequirementIds: [],
+  generatedPlan: null,
   unlockedOptimizedPlan: false,
   usedAutoFill: false,
   preferredMaxUnitsPerTerm: 15,

@@ -82,7 +82,7 @@ export default function ProgressForm({ initialState }: ProgressFormProps) {
 
     try {
       await updateAppState(progress);
-      await generatePlan(progress);
+      await generatePlan();
       router.push("/dashboard");
       router.refresh();
     } finally {

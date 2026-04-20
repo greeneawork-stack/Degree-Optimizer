@@ -174,6 +174,9 @@ export type OptimizationResult = {
   activeMinorName: string;
   globalRules: GlobalRule[];
   plannerStatus: "idle" | "locked" | "ready" | "partial";
+  scheduleGenerated: boolean;
+  plannerWarnings: string[];
+  electiveSections: ElectiveSection[];
 };
 
 export type ElectiveCoursePreview = {
@@ -201,6 +204,7 @@ export type PlannerResult = {
   fasterBySemesters: number;
   basicSchedule: SemesterPlan[];
   optimizedSchedule: SemesterPlan[];
+  plannerStatus: "idle" | "locked" | "ready" | "partial";
   scheduleGenerated: boolean;
   plannerWarnings: string[];
   electiveSections: ElectiveSection[];
@@ -208,10 +212,11 @@ export type PlannerResult = {
 
 export type PetitionFormValues = {
   gpa: string;
-  workHours: string;
+  workHoursPerWeek: string;
   workType: string;
   targetGraduationTerm: string;
   petitionReason: string;
+  additionalContext?: string;
   degreePathName: string;
   minorName: string;
 };

@@ -39,5 +39,6 @@
   "completedUnits": 120,
   "completedUpperDivisionUnits": 33,
   "completedSacStateUnits": 120,
-  "completedSacStateUpperDivisionUnits": 33
+  "completedSacStateUpperDivisionUnits": 33,
+  "generatedPlan": null
 }

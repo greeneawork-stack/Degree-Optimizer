@@ -6,7 +6,7 @@ export async function POST(request: Request) {
   const body = (await request.json()) as PetitionFormValues;
 
   const gpa = body.gpa?.trim() || "my current GPA";
-  const workHours = body.workHours?.trim() || "0";
+  const workHours = body.workHoursPerWeek?.trim() || "0";
   const workType = body.workType?.trim() || "ongoing work commitments";
   const targetTerm = body.targetGraduationTerm?.trim() || "my intended graduation term";
   const petitionReason = body.petitionReason?.trim() || "academic acceleration";

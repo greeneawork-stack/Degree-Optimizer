@@ -2,12 +2,7 @@ import PetitionAssistant from "@/components/petition-assistant";
 import UnlockOptimizer from "@/components/unlock-optimizer";
 import { buildOptimization, buildPlanSummary } from "@/lib/planner";
 import { readAppState, readGeneratedPlan } from "@/lib/storage";
-import type {
-  ElectiveDisplaySection,
-  GraduationRequirementStatus,
-  RequirementItem,
-  SemesterPlan,
-} from "@/lib/types";
+import type { ElectiveSection, GraduationRequirementStatus, RequirementItem, SemesterPlan } from "@/lib/types";
 import type { ReactNode } from "react";
 
 function CollapsibleCard({
@@ -181,7 +176,7 @@ function RequirementList({
   );
 }
 
-function ElectivesSection({ sections }: { sections: ElectiveDisplaySection[] }) {
+function ElectivesSection({ sections }: { sections: ElectiveSection[] }) {
   const safeSections = Array.isArray(sections) ? sections : [];
 
   return (
@@ -208,8 +203,8 @@ function ElectivesSection({ sections }: { sections: ElectiveDisplaySection[] }) 
                             </p>
                             <p className="mt-1 text-sm text-slate-600">{course.units} units</p>
                           </div>
-                          <div className="flex flex-wrap gap-2">
-                            {(Array.isArray(course.badges) ? course.badges : []).map((badge) => (
+                        <div className="flex flex-wrap gap-2">
+                          {(Array.isArray(course.tags) ? course.tags : []).map((badge) => (
                               <span
                                 key={badge}
                                 className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700"

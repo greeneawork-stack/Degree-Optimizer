@@ -490,6 +490,7 @@ export function generatePlanSnapshot(state: AppState): PlannerResult {
     optimizedSchedule,
     scheduleGenerated: basicSchedule.length > 0,
     plannerWarnings,
+    plannerStatus: basicSchedule.length > 0 ? "ready" : "partial",
     electiveSections: buildElectiveSections(scoredCourses),
   };
 }
