@@ -21,13 +21,13 @@ export function LayoutShell({ children, title, description }: LayoutShellProps) 
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-transparent text-slate-950">
-      <header className="border-b border-white/60 bg-white/70 backdrop-blur">
+    <div className="min-h-screen bg-transparent text-black">
+      <header className="border-b border-black/15 bg-[var(--brand-surface)]/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <Link href="/" className="text-lg font-semibold tracking-tight">
             Degree Optimizer
           </Link>
-          <nav className="flex flex-wrap items-center gap-2 rounded-full border border-slate-200 bg-white p-1 text-sm shadow-sm">
+          <nav className="flex flex-wrap items-center gap-2 rounded-full border border-black/15 bg-[var(--brand-surface)] p-1 text-sm shadow-sm">
             {navigation.map((item) => {
               const active = pathname === item.href;
               return (
@@ -36,8 +36,8 @@ export function LayoutShell({ children, title, description }: LayoutShellProps) 
                   href={item.href}
                   className={`rounded-full px-3 py-1.5 transition ${
                     active
-                      ? "bg-sky-500 text-white shadow-sm"
-                      : "text-slate-600 hover:bg-sky-50 hover:text-sky-700"
+                      ? "bg-[color:var(--brand-gold)] text-black shadow-sm"
+                      : "text-black hover:bg-[color:var(--brand-gold-soft)] hover:text-black"
                   }`}
                 >
                   {item.label}
@@ -49,10 +49,10 @@ export function LayoutShell({ children, title, description }: LayoutShellProps) 
       </header>
       <main className="mx-auto max-w-6xl px-6 py-10">
         {(title || description) && (
-          <section className="mb-10 rounded-[2rem] border border-slate-200 bg-white/90 px-8 py-8 shadow-sm">
-            {title ? <h1 className="text-3xl font-semibold text-slate-950 sm:text-4xl">{title}</h1> : null}
+          <section className="mb-10 rounded-[2rem] border border-black/15 bg-[var(--brand-surface)] px-8 py-8 shadow-sm">
+            {title ? <h1 className="text-3xl font-semibold text-black sm:text-4xl">{title}</h1> : null}
             {description ? (
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">{description}</p>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-black sm:text-base">{description}</p>
             ) : null}
           </section>
         )}
