@@ -1,11 +1,19 @@
-import type { AppState, Catalog, Course, DegreeMinor, DegreePath, RequirementGroup, School } from "@/lib/types";
+import type {
+  AppState,
+  Catalog,
+  Course,
+  DegreeMinor,
+  DegreePath,
+  ProgramRequirementGroup,
+  School,
+} from "@/lib/types";
 
 const school: School = {
   id: "csus",
   name: "California State University, Sacramento",
 };
 
-const geRequirements: RequirementGroup[] = [
+const geRequirements: ProgramRequirementGroup[] = [
   {
     id: "ge-foundations",
     title: "GE Foundations",
@@ -92,7 +100,7 @@ const geRequirements: RequirementGroup[] = [
   },
 ];
 
-const universityRequirements: RequirementGroup[] = [
+const universityRequirements: ProgramRequirementGroup[] = [
   {
     id: "csus-graduation-requirements",
     title: "Sacramento State graduation requirements",
@@ -950,6 +958,32 @@ export const catalog: Catalog = {
     recommendedUnitsPerTerm: 15,
     maxUnitsPerTerm: 18,
   },
+  globalRules: [
+    {
+      id: "total-units",
+      label: "120 total units",
+      metric: "totalUnits",
+      minimum: 120,
+    },
+    {
+      id: "upper-division-units",
+      label: "39 upper-division units",
+      metric: "upperDivisionUnits",
+      minimum: 39,
+    },
+    {
+      id: "sac-state-units",
+      label: "30 Sacramento State units",
+      metric: "sacStateUnits",
+      minimum: 30,
+    },
+    {
+      id: "sac-state-upper-division-units",
+      label: "24 Sacramento State upper-division units",
+      metric: "sacStateUpperDivisionUnits",
+      minimum: 24,
+    },
+  ],
   courses,
   autoFillCompletedRequirementIdsByDegree: {
     "political-science-ba": [
@@ -1002,3 +1036,37 @@ export const defaultAppState: AppState = {
   completedSacStateUnits: 15,
   completedSacStateUpperDivisionUnits: 0,
 };
+
+export function getSelectedDegreePath(degreePathId: string) {
+  return catalog.degreePaths.find((path) => path.id === degreePathId) ?? catalog.degreePaths[0];
+}
+
+export function getSelectedMinor(minorId: string) {
+  if (minorId === "none") {
+    return undefined;
+  }
+
+  return catalog.minors.find((minor) => minor.id === minorId);
+}
+
+export function getAutoFillState(degreePathId: string, minorId: string): AppState {
+  const degreePath = getSelectedDegreePath(degreePathId);
+  const minor = getSelectedMinor(minorId);
+
+  return {
+    ...defaultAppState,
+    degreePathId: degreePath.id,
+    degreePathName: degreePath.name,
+    minorId: minor?.id ?? "none",
+    minorName: minor?.name ?? "None",
+    completedRequirementIds: [
+      ...(catalog.autoFillCompletedRequirementIdsByDegree[degreePath.id] ?? []),
+      ...((minor && catalog.autoFillMinorRequirementIdsByMinor[minor.id]) ?? []),
+    ],
+    usedAutoFill: true,
+    completedUnits: 60,
+    completedUpperDivisionUnits: degreePath.id === "political-science-journalism" ? 6 : 3,
+    completedSacStateUnits: 21,
+    completedSacStateUpperDivisionUnits: degreePath.id === "political-science-journalism" ? 6 : 3,
+  };
+}

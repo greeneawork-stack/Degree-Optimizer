@@ -126,7 +126,37 @@ export default function ProgressPage() {
             </p>
           </div>
 
-          <ProgressChecklist progress={progress} setProgress={setProgress} />
+          <div className="space-y-8">
+            <ProgressChecklist
+              title="General Education"
+              tone="sky"
+              groups={catalog.geRequirements}
+              progress={progress}
+              setProgress={setProgress}
+            />
+            <ProgressChecklist
+              title="University requirements"
+              tone="violet"
+              groups={catalog.universityRequirements}
+              progress={progress}
+              setProgress={setProgress}
+            />
+            <ProgressChecklist
+              title={selectedDegree.name}
+              tone="emerald"
+              groups={selectedDegree.requirementGroups}
+              progress={progress}
+              setProgress={setProgress}
+            />
+            <ProgressChecklist
+              title={selectedMinor?.name ?? "Optional minor"}
+              tone="amber"
+              groups={selectedMinor?.requirementGroups ?? []}
+              progress={progress}
+              setProgress={setProgress}
+              emptyMessage="No minor selected. Choose Political Science Minor during onboarding to track minor requirements."
+            />
+          </div>
 
           <section className="space-y-4 rounded-3xl border border-slate-200 bg-slate-50 p-5">
             <div>

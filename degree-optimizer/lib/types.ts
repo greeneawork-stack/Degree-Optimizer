@@ -12,8 +12,8 @@ export type RequirementItem = {
   label: string;
   description: string;
   kind: RequirementKind;
-  priority: RequirementPriority;
-  units: number;
+  priority?: RequirementPriority;
+  units?: number;
 };
 
 export type ProgramRequirementGroup = {
@@ -33,6 +33,8 @@ export type DegreePath = {
   name: string;
   shortName: string;
   totalUnits: number;
+  lowerDivisionUnits?: number;
+  upperDivisionUnits?: number;
   requirementGroups: ProgramRequirementGroup[];
   notes: string[];
 };
@@ -67,9 +69,9 @@ export type Course = {
   units: number;
   level: CourseLevel;
   department: string;
-  difficulty: 1 | 2 | 3;
-  categories: string[];
-  tags: string[];
+  difficulty?: 1 | 2 | 3;
+  categories?: string[];
+  tags?: string[];
   satisfiesRequirementIds: string[];
   note?: string;
 };

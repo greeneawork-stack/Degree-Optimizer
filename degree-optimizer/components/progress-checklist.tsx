@@ -2,12 +2,12 @@
 
 import type { Dispatch, SetStateAction } from "react";
 
-import type { AppState, RequirementGroup } from "@/lib/types";
+import type { AppState, ProgramRequirementGroup } from "@/lib/types";
 
 type ProgressChecklistProps = {
   title: string;
   tone: "sky" | "emerald" | "violet" | "amber";
-  groups: RequirementGroup[];
+  groups: ProgramRequirementGroup[];
   progress: AppState;
   setProgress: Dispatch<SetStateAction<AppState>>;
   emptyMessage?: string;

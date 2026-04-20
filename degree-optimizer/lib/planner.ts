@@ -45,7 +45,7 @@ function getActiveRequirementGroups(state: AppState) {
 function countCompletedUnits(groups: ProgramRequirementGroup[], completedIds: string[]) {
   return flattenGroups(groups)
     .filter((requirement) => completedIds.includes(requirement.id))
-    .reduce((sum, requirement) => sum + requirement.units, 0);
+    .reduce((sum, requirement) => sum + (requirement.units ?? 0), 0);
 }
 
 function buildGraduationStatuses(state: AppState): GraduationRequirementStatus[] {
@@ -105,6 +105,7 @@ export function scoreCourse(
     majorPoints: coversRequiredMajor || coversMinor ? 3 : 0,
     gePoints: coversGe || coversUniversity ? 2 : 0,
     overlapBonus,
+    electivePoints: course.categories?.includes("elective") ? 1 : 0,
     total:
       (coversRequiredMajor || coversMinor ? 3 : 0) +
       (coversGe || coversUniversity ? 2 : 0) +
@@ -146,6 +147,8 @@ function buildScoredCourseList(state: AppState) {
 
       return {
         ...course,
+        difficulty: course.difficulty ?? 2,
+        categories: course.categories ?? [],
         score,
         coveredRequirementIds,
         coveredRequirementLabels: coveredRequirementIds
@@ -198,7 +201,7 @@ function buildSchedule(state: AppState, scoredCourses: ScoredCourse[], maxUnits:
       if (!wouldExceedUnits && !wouldOverloadCore) {
         picked.push(course);
         totalUnits += course.units;
-        difficultyScore += course.difficulty;
+        difficultyScore += course.difficulty ?? 2;
         if (course.score.coversRequiredMajor) {
           majorCoreCount += 1;
         }
@@ -213,7 +216,7 @@ function buildSchedule(state: AppState, scoredCourses: ScoredCourse[], maxUnits:
       if (fallback) {
         picked.push(fallback);
         totalUnits += fallback.units;
-        difficultyScore += fallback.difficulty;
+        difficultyScore += fallback.difficulty ?? 2;
         if (fallback.score.coversRequiredMajor) {
           majorCoreCount += 1;
         }
@@ -311,12 +314,17 @@ export function buildOptimization(state: AppState): OptimizationResult {
   const completion = estimateCompletion(state);
   const basicSchedule = generateBasicSchedule(state);
   const optimizedSchedule = generateOptimizedSchedule(state);
+  const degreePath = getSelectedDegreePath(state.degreePathId);
+  const minor = getSelectedMinor(state.minorId);
 
   return {
     completion,
     basicSchedule,
     optimizedSchedule,
     fasterBySemesters: Math.max(basicSchedule.length - optimizedSchedule.length, 0),
+    activeDegreePathName: degreePath.name,
+    activeMinorName: minor?.name ?? "None",
+    globalRules: catalog.globalRules,
   };
 }
 
