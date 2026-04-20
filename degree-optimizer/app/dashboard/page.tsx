@@ -1,6 +1,6 @@
 import PetitionAssistant from "@/components/petition-assistant";
 import UnlockOptimizer from "@/components/unlock-optimizer";
-import { buildPlanSummary } from "@/lib/planner";
+import { buildOptimization } from "@/lib/planner";
 import { readAppState } from "@/lib/storage";
 import type { GraduationRequirementStatus, RequirementItem, SemesterPlan } from "@/lib/types";
 
@@ -148,38 +148,38 @@ function ScheduleCard({
       ) : (
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {safeSchedule.map((semester) => (
-          <article key={semester.term} className="rounded-2xl bg-slate-50 p-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-slate-900">{semester.term}</h3>
-              <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-500">
-                {semester.totalUnits} units
-              </span>
-            </div>
-            <p className="mt-2 text-xs text-slate-500">{semester.summary}</p>
-            <div className="mt-1 text-xs text-slate-500">Difficulty score: {semester.difficultyScore}</div>
-            <ul className="mt-4 space-y-3 text-sm text-slate-600">
-              {semester.courses.map((course) => (
-                <li key={course.code} className="rounded-2xl border border-white bg-white/90 px-3 py-3">
-                  <div className="font-medium text-slate-900">
-                    {course.code}: {course.title}
-                  </div>
-                  <div className="mt-1 text-xs text-slate-500">
-                    {course.units} units • {course.level === "upper" ? "Upper division" : "Lower division"} • Score{" "}
-                    {course.score.total}
-                  </div>
-                  {course.coveredRequirementLabels.length > 0 ? (
-                    <div className="mt-2 text-xs text-slate-500">
-                      Covers: {course.coveredRequirementLabels.join(", ")}
+            <article key={semester.term} className="rounded-2xl bg-slate-50 p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-slate-900">{semester.term}</h3>
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-500">
+                  {semester.totalUnits} units
+                </span>
+              </div>
+              <p className="mt-2 text-xs text-slate-500">{semester.summary}</p>
+              <div className="mt-1 text-xs text-slate-500">Difficulty score: {semester.difficultyScore}</div>
+              <ul className="mt-4 space-y-3 text-sm text-slate-600">
+                {semester.courses.map((course) => (
+                  <li key={course.code} className="rounded-2xl border border-white bg-white/90 px-3 py-3">
+                    <div className="font-medium text-slate-900">
+                      {course.code}: {course.title}
                     </div>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-            <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-xs text-slate-500">
-              Projected totals: {semester.projectedTotalUnits} total units • {semester.projectedUpperDivisionUnits}{" "}
-              upper division • {semester.projectedSacStateUnits} Sac State
-            </div>
-          </article>
+                    <div className="mt-1 text-xs text-slate-500">
+                      {course.units} units • {course.level === "upper" ? "Upper division" : "Lower division"} • Score{" "}
+                      {course.score.total}
+                    </div>
+                    {course.coveredRequirementLabels.length > 0 ? (
+                      <div className="mt-2 text-xs text-slate-500">
+                        Covers: {course.coveredRequirementLabels.join(", ")}
+                      </div>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-xs text-slate-500">
+                Projected totals: {semester.projectedTotalUnits} total units • {semester.projectedUpperDivisionUnits}{" "}
+                upper division • {semester.projectedSacStateUnits} Sac State
+              </div>
+            </article>
           ))}
         </div>
       )}
@@ -189,7 +189,7 @@ function ScheduleCard({
 
 export default async function DashboardPage() {
   const state = await readAppState();
-  const optimization = buildPlanSummary(state);
+  const optimization = buildOptimization(state);
   const completion = optimization.completion;
   const isPremium = state.mode === "premium";
 

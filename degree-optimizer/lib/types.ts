@@ -171,6 +171,7 @@ export type OptimizationResult = {
   activeDegreePathName: string;
   activeMinorName: string;
   globalRules: GlobalRule[];
+  plannerStatus: "idle" | "locked" | "ready" | "partial";
 };
 
 export type PlannerResult = {

@@ -1,8 +1,8 @@
-import ProgressPageClient from "@/components/progress-page-client";
+import ProgressForm from "@/components/progress-form";
 import { readAppState } from "@/lib/storage";
 
 export default async function ProgressPage() {
   const initialState = await readAppState();
 
-  return <ProgressPageClient initialState={initialState} />;
+  return <ProgressForm initialState={initialState} />;
 }

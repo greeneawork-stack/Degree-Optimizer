@@ -5,5 +5,5 @@ import { readAppState } from "@/lib/storage";
 
 export async function GET() {
   const state = await readAppState();
-  return NextResponse.json(buildOptimization(state, { includeSchedules: state.mode === "premium" }));
+  return NextResponse.json(buildOptimization(state));
 }
