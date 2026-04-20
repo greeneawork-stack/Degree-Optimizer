@@ -8,12 +8,16 @@ import type { SemesterPlan } from "@/lib/types";
 type UnlockOptimizerProps = {
   optimizedSchedule: SemesterPlan[];
   fasterBySemesters: number;
+  preferredMaxUnitsPerTerm: number;
+  preferFewerDaysOnCampus: boolean;
   initiallyUnlocked?: boolean;
 };
 
 export default function UnlockOptimizer({
   optimizedSchedule,
   fasterBySemesters,
+  preferredMaxUnitsPerTerm,
+  preferFewerDaysOnCampus,
   initiallyUnlocked = false,
 }: UnlockOptimizerProps) {
   const [isUnlocked, setIsUnlocked] = useState(initiallyUnlocked);
@@ -86,7 +90,8 @@ export default function UnlockOptimizer({
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
                 <p className="text-sm font-semibold text-emerald-900">Optimized schedule</p>
                 <p className="mt-1 text-sm text-emerald-800">
-                  Classes with major + GE overlap are moved earlier to compress the path.
+                  Required major courses, overlap-heavy classes, upper-division needs, and remaining electives are
+                  sequenced for a faster path.
                 </p>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -95,13 +100,18 @@ export default function UnlockOptimizer({
                   <label className="grid gap-1">
                     <span>Max units per semester</span>
                     <input
-                      value="15"
+                      value={String(preferredMaxUnitsPerTerm)}
                       readOnly
                       className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2"
                     />
                   </label>
                   <label className="flex items-center gap-2">
-                    <input type="checkbox" className="rounded border-slate-300" />
+                    <input
+                      type="checkbox"
+                      className="rounded border-slate-300"
+                      checked={preferFewerDaysOnCampus}
+                      readOnly
+                    />
                     <span>Prefer fewer days on campus</span>
                   </label>
                 </div>
@@ -124,9 +134,11 @@ export default function UnlockOptimizer({
                           {course.code}: {course.title}
                         </div>
                         <div className="mt-1 text-xs text-slate-500">
-                          Score {course.score.total}
-                          {course.satisfiesMajorCategory ? ` • ${course.satisfiesMajorCategory}` : ""}
-                          {course.satisfiesGe.length > 0 ? ` • GE ${course.satisfiesGe.join(", ")}` : ""}
+                          Score {course.score.total} • {course.units} units
+                          {course.level === "upper" ? " • Upper division" : " • Lower division"}
+                        </div>
+                        <div className="mt-1 text-xs text-slate-500">
+                          Covers: {course.coveredRequirementLabels.join(", ")}
                         </div>
                       </li>
                     ))}
