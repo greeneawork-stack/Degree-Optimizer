@@ -2,13 +2,15 @@
 
 import type { Dispatch, SetStateAction } from "react";
 
-import type { AppState, RequirementGroup } from "@/lib/types";
+import type { AppState, ProgramRequirementGroup } from "@/lib/types";
 
 type ProgressChecklistProps = {
-  geRequirements: RequirementGroup[];
-  majorRequirements: RequirementGroup[];
+  title: string;
+  tone: "sky" | "emerald" | "violet" | "amber";
+  groups: ProgramRequirementGroup[];
   progress: AppState;
   setProgress: Dispatch<SetStateAction<AppState>>;
+  emptyMessage?: string;
 };
 
 function toggleValue(values: string[], value: string) {
@@ -19,33 +21,47 @@ function toggleValue(values: string[], value: string) {
   return [...values, value];
 }
 
-function RequirementSection({
+function toneClasses(tone: ProgressChecklistProps["tone"]) {
+  switch (tone) {
+    case "sky":
+      return "hover:border-sky-300 hover:bg-sky-50/60";
+    case "emerald":
+      return "hover:border-emerald-300 hover:bg-emerald-50/60";
+    case "violet":
+      return "hover:border-violet-300 hover:bg-violet-50/60";
+    case "amber":
+      return "hover:border-amber-300 hover:bg-amber-50/60";
+    default:
+      return "hover:border-slate-300 hover:bg-slate-50/60";
+  }
+}
+
+export default function ProgressChecklist({
   title,
   tone,
   groups,
   progress,
   setProgress,
-}: {
-  title: string;
-  tone: "sky" | "emerald";
-  groups: RequirementGroup[];
-  progress: AppState;
-  setProgress: Dispatch<SetStateAction<AppState>>;
-}) {
-  const toneClasses =
-    tone === "sky"
-      ? "hover:border-sky-300 hover:bg-sky-50/60"
-      : "hover:border-emerald-300 hover:bg-emerald-50/60";
-
+  emptyMessage = "No requirements are currently loaded for this section.",
+}: ProgressChecklistProps) {
   return (
     <div>
       <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
       <div className="mt-5 space-y-5">
+        {groups.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+            {emptyMessage}
+          </div>
+        ) : null}
+
         {groups.map((group) => (
           <section key={group.id}>
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
+            <h3 className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
               {group.title}
             </h3>
+            {group.description ? (
+              <p className="mb-3 text-sm text-slate-500">{group.description}</p>
+            ) : null}
             <div className="space-y-3">
               {group.requirements.map((requirement) => {
                 const isChecked = progress.completedRequirementIds.includes(requirement.id);
@@ -53,7 +69,9 @@ function RequirementSection({
                 return (
                   <label
                     key={requirement.id}
-                    className={`flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition ${toneClasses}`}
+                    className={`flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition ${toneClasses(
+                      tone,
+                    )}`}
                   >
                     <input
                       type="checkbox"
@@ -69,7 +87,7 @@ function RequirementSection({
                         }))
                       }
                     />
-                    <span>
+                    <span className="min-w-0">
                       <span className="block text-sm font-semibold text-slate-900">
                         {requirement.label}
                       </span>
@@ -84,32 +102,6 @@ function RequirementSection({
           </section>
         ))}
       </div>
-    </div>
-  );
-}
-
-export default function ProgressChecklist({
-  geRequirements,
-  majorRequirements,
-  progress,
-  setProgress,
-}: ProgressChecklistProps) {
-  return (
-    <div className="grid gap-8 lg:grid-cols-2">
-      <RequirementSection
-        title="General Education"
-        tone="sky"
-        groups={geRequirements}
-        progress={progress}
-        setProgress={setProgress}
-      />
-      <RequirementSection
-        title="Political Science Major"
-        tone="emerald"
-        groups={majorRequirements}
-        progress={progress}
-        setProgress={setProgress}
-      />
     </div>
   );
 }

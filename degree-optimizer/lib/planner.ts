@@ -1,59 +1,159 @@
-import { catalog, defaultAppState } from "@/data/catalog";
+import { catalog, defaultAppState, getSelectedDegreePath, getSelectedMinor } from "@/data/catalog";
 import type {
   AppState,
   CompletionSummary,
   Course,
   CourseScore,
+  GraduationRequirementStatus,
   OptimizationResult,
-  RequirementGroup,
+  ProgramRequirementGroup,
   RequirementItem,
   ScoredCourse,
   SemesterPlan,
 } from "@/lib/types";
 
-const BASIC_MAX_UNITS = 12;
-const OPTIMIZED_MAX_UNITS = 15;
+const BASIC_UNIT_CAP = 15;
+const OPTIMIZED_UNIT_CAP = 18;
+const MAX_MAJOR_CORE_PER_TERM = 2;
 
-function flattenRequirements(groups: RequirementGroup[]) {
+function flattenGroups(groups: ProgramRequirementGroup[]) {
   return groups.flatMap((group) => group.requirements);
 }
 
-function getRemainingRequirements(groups: RequirementGroup[], completedRequirementIds: string[]) {
-  return flattenRequirements(groups).filter(
-    (requirement) => !completedRequirementIds.includes(requirement.id),
-  );
+function getRemainingRequirements(groups: ProgramRequirementGroup[], completedIds: string[]) {
+  return flattenGroups(groups).filter((requirement) => !completedIds.includes(requirement.id));
 }
 
-export function scoreCourse(course: Course, remainingRequirementIds: Set<string>): CourseScore {
-  const majorHits = course.satisfiesMajorRequirementIds.filter((id) => remainingRequirementIds.has(id)).length;
-  const geHits = course.satisfiesGe.filter((id) => remainingRequirementIds.has(id)).length;
-  const overlapBonus = majorHits > 0 && geHits > 0 ? 1 : 0;
+function buildRequirementLookup(groups: ProgramRequirementGroup[]) {
+  return new Map(flattenGroups(groups).map((requirement) => [requirement.id, requirement]));
+}
+
+function getActiveRequirementGroups(state: AppState) {
+  const degreePath = getSelectedDegreePath(state.degreePathId);
+  const minor = getSelectedMinor(state.minorId);
 
   return {
-    majorPoints: majorHits > 0 ? 3 : 0,
-    gePoints: geHits > 0 ? 2 : 0,
+    degreePath,
+    minor,
+    majorGroups: degreePath.requirementGroups,
+    minorGroups: minor?.requirementGroups ?? [],
+    geGroups: catalog.geRequirements,
+    universityGroups: catalog.universityRequirements,
+  };
+}
+
+function countCompletedUnits(groups: ProgramRequirementGroup[], completedIds: string[]) {
+  return flattenGroups(groups)
+    .filter((requirement) => completedIds.includes(requirement.id))
+    .reduce((sum, requirement) => sum + (requirement.units ?? 0), 0);
+}
+
+function buildGraduationStatuses(state: AppState): GraduationRequirementStatus[] {
+  return [
+    {
+      id: "total-units",
+      label: "120 total units",
+      completed: state.completedUnits,
+      required: catalog.graduationRules.minimumTotalUnits,
+      remaining: Math.max(catalog.graduationRules.minimumTotalUnits - state.completedUnits, 0),
+    },
+    {
+      id: "upper-division-units",
+      label: "39 upper-division units",
+      completed: state.completedUpperDivisionUnits,
+      required: catalog.graduationRules.minimumUpperDivisionUnits,
+      remaining: Math.max(catalog.graduationRules.minimumUpperDivisionUnits - state.completedUpperDivisionUnits, 0),
+    },
+    {
+      id: "sac-state-units",
+      label: "30 Sacramento State units",
+      completed: state.completedSacStateUnits,
+      required: catalog.graduationRules.minimumSacStateUnits,
+      remaining: Math.max(catalog.graduationRules.minimumSacStateUnits - state.completedSacStateUnits, 0),
+    },
+    {
+      id: "sac-state-upper-division-units",
+      label: "24 Sacramento State upper-division units",
+      completed: state.completedSacStateUpperDivisionUnits,
+      required: catalog.graduationRules.minimumSacStateUpperDivisionUnits,
+      remaining: Math.max(
+        catalog.graduationRules.minimumSacStateUpperDivisionUnits - state.completedSacStateUpperDivisionUnits,
+        0,
+      ),
+    },
+  ];
+}
+
+export function scoreCourse(
+  course: Course,
+  remainingRequirementIds: Set<string>,
+  majorLookup: Map<string, RequirementItem>,
+  minorLookup: Map<string, RequirementItem>,
+  universityLookup: Map<string, RequirementItem>,
+): CourseScore {
+  const coveredRequirementIds = course.satisfiesRequirementIds.filter((id) => remainingRequirementIds.has(id));
+  const coversRequiredMajor = coveredRequirementIds.some((id) => majorLookup.has(id));
+  const coversMinor = coveredRequirementIds.some((id) => minorLookup.has(id));
+  const coversUniversity = coveredRequirementIds.some((id) => universityLookup.has(id));
+  const coversGe = coveredRequirementIds.some(
+    (id) => !majorLookup.has(id) && !minorLookup.has(id) && !universityLookup.has(id),
+  );
+  const overlapBonus = (coversRequiredMajor || coversMinor) && (coversGe || coversUniversity) ? 1 : 0;
+  const upperDivisionPriority = course.level === "upper" ? 1 : 0;
+
+  return {
+    majorPoints: coversRequiredMajor || coversMinor ? 3 : 0,
+    gePoints: coversGe || coversUniversity ? 2 : 0,
     overlapBonus,
-    total: (majorHits > 0 ? 3 : 0) + (geHits > 0 ? 2 : 0) + overlapBonus,
+    electivePoints: course.categories?.includes("elective") ? 1 : 0,
+    total:
+      (coversRequiredMajor || coversMinor ? 3 : 0) +
+      (coversGe || coversUniversity ? 2 : 0) +
+      overlapBonus +
+      upperDivisionPriority,
+    coversRequiredMajor,
+    coversMinor,
+    coversUniversity,
+    coveredCount: coveredRequirementIds.length,
+    upperDivisionPriority,
   };
 }
 
 function buildScoredCourseList(state: AppState) {
-  const remainingMajor = getRemainingRequirements(catalog.majorRequirements, state.completedRequirementIds);
-  const remainingGe = getRemainingRequirements(catalog.geRequirements, state.completedRequirementIds);
-  const remainingRequirementIds = new Set([...remainingMajor, ...remainingGe].map((item) => item.id));
+  const { majorGroups, minorGroups, geGroups, universityGroups } = getActiveRequirementGroups(state);
+  const remainingMajor = getRemainingRequirements(majorGroups, state.completedRequirementIds);
+  const remainingMinor = getRemainingRequirements(minorGroups, state.completedRequirementIds);
+  const remainingGe = getRemainingRequirements(geGroups, state.completedRequirementIds);
+  const remainingUniversity = getRemainingRequirements(universityGroups, state.completedRequirementIds);
+
+  const remainingRequirementIds = new Set(
+    [...remainingMajor, ...remainingMinor, ...remainingGe, ...remainingUniversity].map((item) => item.id),
+  );
+
+  const majorLookup = buildRequirementLookup(majorGroups);
+  const minorLookup = buildRequirementLookup(minorGroups);
+  const universityLookup = buildRequirementLookup(universityGroups);
+  const allRequirementLookup = new Map(
+    [...majorLookup, ...minorLookup, ...universityLookup, ...buildRequirementLookup(geGroups)].map(([id, item]) => [
+      id,
+      item,
+    ]),
+  );
 
   return catalog.courses
     .map((course) => {
-      const score = scoreCourse(course, remainingRequirementIds);
-      const coveredRequirementIds = [
-        ...course.satisfiesMajorRequirementIds.filter((id) => remainingRequirementIds.has(id)),
-        ...course.satisfiesGe.filter((id) => remainingRequirementIds.has(id)),
-      ];
+      const coveredRequirementIds = course.satisfiesRequirementIds.filter((id) => remainingRequirementIds.has(id));
+      const score = scoreCourse(course, remainingRequirementIds, majorLookup, minorLookup, universityLookup);
 
       return {
         ...course,
+        difficulty: course.difficulty ?? 2,
+        categories: course.categories ?? [],
         score,
         coveredRequirementIds,
+        coveredRequirementLabels: coveredRequirementIds
+          .map((id) => allRequirementLookup.get(id)?.label)
+          .filter((label): label is string => Boolean(label)),
       } satisfies ScoredCourse;
     })
     .filter((course) => course.score.total > 0)
@@ -62,41 +162,89 @@ function buildScoredCourseList(state: AppState) {
         return right.score.total - left.score.total;
       }
 
-      if (right.coveredRequirementIds.length !== left.coveredRequirementIds.length) {
-        return right.coveredRequirementIds.length - left.coveredRequirementIds.length;
+      if (right.score.coveredCount !== left.score.coveredCount) {
+        return right.score.coveredCount - left.score.coveredCount;
+      }
+
+      if (right.score.upperDivisionPriority !== left.score.upperDivisionPriority) {
+        return right.score.upperDivisionPriority - left.score.upperDivisionPriority;
       }
 
       return left.code.localeCompare(right.code);
     });
 }
 
-function buildSchedule(scoredCourses: ScoredCourse[], maxUnitsPerSemester: number): SemesterPlan[] {
+function countMajorCoreCourses(courses: ScoredCourse[]) {
+  return courses.filter((course) => course.score.coversRequiredMajor).length;
+}
+
+function buildSchedule(state: AppState, scoredCourses: ScoredCourse[], maxUnits: number): SemesterPlan[] {
   const remaining = [...scoredCourses];
   const semesters: SemesterPlan[] = [];
   let semesterIndex = 1;
+  let runningTotalUnits = state.completedUnits;
+  let runningUpperDivisionUnits = state.completedUpperDivisionUnits;
+  let runningSacStateUnits = state.completedSacStateUnits;
+  let runningSacStateUpperDivisionUnits = state.completedSacStateUpperDivisionUnits;
 
   while (remaining.length > 0) {
     let totalUnits = 0;
+    let majorCoreCount = 0;
+    let difficultyScore = 0;
     const picked: ScoredCourse[] = [];
 
     for (let index = 0; index < remaining.length; ) {
       const course = remaining[index];
-      const fits = totalUnits === 0 || totalUnits + course.units <= maxUnitsPerSemester;
+      const wouldExceedUnits = totalUnits > 0 && totalUnits + course.units > maxUnits;
+      const wouldOverloadCore = course.score.coversRequiredMajor && majorCoreCount >= MAX_MAJOR_CORE_PER_TERM;
 
-      if (fits) {
+      if (!wouldExceedUnits && !wouldOverloadCore) {
         picked.push(course);
         totalUnits += course.units;
+        difficultyScore += course.difficulty ?? 2;
+        if (course.score.coversRequiredMajor) {
+          majorCoreCount += 1;
+        }
         remaining.splice(index, 1);
       } else {
         index += 1;
       }
     }
 
+    if (picked.length === 0 && remaining.length > 0) {
+      const fallback = remaining.shift();
+      if (fallback) {
+        picked.push(fallback);
+        totalUnits += fallback.units;
+        difficultyScore += fallback.difficulty ?? 2;
+        if (fallback.score.coversRequiredMajor) {
+          majorCoreCount += 1;
+        }
+      }
+    }
+
+    const upperDivisionUnitsThisTerm = picked.reduce(
+      (sum, course) => sum + (course.level === "upper" ? course.units : 0),
+      0,
+    );
+
+    runningTotalUnits += totalUnits;
+    runningUpperDivisionUnits += upperDivisionUnitsThisTerm;
+    runningSacStateUnits += totalUnits;
+    runningSacStateUpperDivisionUnits += upperDivisionUnitsThisTerm;
+
     semesters.push({
       term: `Semester ${semesterIndex}`,
       totalUnits,
       courses: picked,
+      summary: `${majorCoreCount} core course${majorCoreCount === 1 ? "" : "s"} • ${upperDivisionUnitsThisTerm} upper-division units`,
+      difficultyScore,
+      projectedTotalUnits: runningTotalUnits,
+      projectedUpperDivisionUnits: runningUpperDivisionUnits,
+      projectedSacStateUnits: runningSacStateUnits,
+      projectedSacStateUpperDivisionUnits: runningSacStateUpperDivisionUnits,
     });
+
     semesterIndex += 1;
   }
 
@@ -104,14 +252,28 @@ function buildSchedule(scoredCourses: ScoredCourse[], maxUnitsPerSemester: numbe
 }
 
 export function estimateCompletion(state: AppState): CompletionSummary {
-  const remainingMajor = getRemainingRequirements(catalog.majorRequirements, state.completedRequirementIds);
-  const remainingGe = getRemainingRequirements(catalog.geRequirements, state.completedRequirementIds);
-  const totalRequirementCount =
-    flattenRequirements(catalog.majorRequirements).length + flattenRequirements(catalog.geRequirements).length;
-  const completedCount = totalRequirementCount - remainingMajor.length - remainingGe.length;
-  const percentComplete = Math.round((completedCount / totalRequirementCount) * 100);
+  const { degreePath, minor, majorGroups, minorGroups, geGroups, universityGroups } = getActiveRequirementGroups(state);
+  const remainingMajor = getRemainingRequirements(majorGroups, state.completedRequirementIds);
+  const remainingMinor = getRemainingRequirements(minorGroups, state.completedRequirementIds);
+  const remainingGe = getRemainingRequirements(geGroups, state.completedRequirementIds);
+  const remainingUniversity = getRemainingRequirements(universityGroups, state.completedRequirementIds);
+
+  const allRequirements = [
+    ...flattenGroups(majorGroups),
+    ...flattenGroups(minorGroups),
+    ...flattenGroups(geGroups),
+    ...flattenGroups(universityGroups),
+  ];
+  const completedRequirements = allRequirements.filter((item) =>
+    state.completedRequirementIds.includes(item.id),
+  ).length;
+  const percentComplete = Math.round((completedRequirements / allRequirements.length) * 100);
   const estimatedSemestersRemaining = Math.max(
-    buildSchedule(buildScoredCourseList(state), BASIC_MAX_UNITS).length,
+    buildSchedule(
+      state,
+      buildScoredCourseList(state),
+      Math.min(state.preferredMaxUnitsPerTerm, BASIC_UNIT_CAP),
+    ).length,
     1,
   );
 
@@ -119,28 +281,50 @@ export function estimateCompletion(state: AppState): CompletionSummary {
     percentComplete,
     estimatedSemestersRemaining,
     remainingMajor,
+    remainingMinor,
     remainingGe,
+    remainingUniversity,
+    selectedDegreePathName: degreePath.name,
+    selectedMinorName: minor?.name ?? "None",
+    degreeUnitsCompleted: countCompletedUnits(majorGroups, state.completedRequirementIds),
+    degreeUnitsRequired: degreePath.totalUnits,
+    minorUnitsCompleted: countCompletedUnits(minorGroups, state.completedRequirementIds),
+    minorUnitsRequired: minor?.totalUnits ?? 0,
+    graduationRequirements: buildGraduationStatuses(state),
   };
 }
 
 export function generateBasicSchedule(state: AppState) {
-  return buildSchedule(buildScoredCourseList(state), BASIC_MAX_UNITS);
+  return buildSchedule(
+    state,
+    buildScoredCourseList(state),
+    Math.min(state.preferredMaxUnitsPerTerm, BASIC_UNIT_CAP),
+  );
 }
 
 export function generateOptimizedSchedule(state: AppState) {
-  return buildSchedule(buildScoredCourseList(state), OPTIMIZED_MAX_UNITS);
+  return buildSchedule(
+    state,
+    buildScoredCourseList(state),
+    Math.min(state.preferredMaxUnitsPerTerm + 3, OPTIMIZED_UNIT_CAP),
+  );
 }
 
 export function buildOptimization(state: AppState): OptimizationResult {
   const completion = estimateCompletion(state);
   const basicSchedule = generateBasicSchedule(state);
   const optimizedSchedule = generateOptimizedSchedule(state);
+  const degreePath = getSelectedDegreePath(state.degreePathId);
+  const minor = getSelectedMinor(state.minorId);
 
   return {
     completion,
     basicSchedule,
     optimizedSchedule,
     fasterBySemesters: Math.max(basicSchedule.length - optimizedSchedule.length, 0),
+    activeDegreePathName: degreePath.name,
+    activeMinorName: minor?.name ?? "None",
+    globalRules: catalog.globalRules,
   };
 }
 

@@ -1,9 +1,13 @@
 {
   "schoolId": "csus",
   "schoolName": "California State University, Sacramento",
-  "majorId": "political-science",
-  "majorName": "Political Science",
+  "degreePathId": "political-science-ba",
+  "degreePathName": "Political Science (BA)",
+  "minorId": "none",
+  "minorName": "None",
   "completedRequirementIds": [],
   "unlockedOptimizedPlan": false,
-  "usedAutoFill": false
+  "usedAutoFill": false,
+  "preferredMaxUnitsPerTerm": 15,
+  "preferFewerDaysOnCampus": false
 }

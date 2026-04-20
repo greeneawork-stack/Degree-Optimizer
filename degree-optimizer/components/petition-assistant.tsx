@@ -6,9 +6,15 @@ import { generatePetitionDraft } from "@/lib/actions";
 
 type PetitionAssistantProps = {
   defaultGraduationGoal: string;
+  degreeLabel: string;
+  minorLabel: string;
 };
 
-export default function PetitionAssistant({ defaultGraduationGoal }: PetitionAssistantProps) {
+export default function PetitionAssistant({
+  defaultGraduationGoal,
+  degreeLabel,
+  minorLabel,
+}: PetitionAssistantProps) {
   const [gpa, setGpa] = useState("3.4");
   const [workHours, setWorkHours] = useState("20");
   const [graduationGoal, setGraduationGoal] = useState(defaultGraduationGoal);
@@ -24,6 +30,8 @@ export default function PetitionAssistant({ defaultGraduationGoal }: PetitionAss
         gpa,
         workHours,
         graduationGoal,
+        degreePathName: degreeLabel,
+        minorName: minorLabel,
       });
       setEmailDraft(result.emailDraft);
     } finally {
@@ -42,7 +50,7 @@ export default function PetitionAssistant({ defaultGraduationGoal }: PetitionAss
         </h2>
         <p className="mt-2 max-w-2xl text-sm text-slate-600">
           Draft an email asking for course sequencing advice, a unit exception, or support for an accelerated
-          graduation plan.
+          graduation plan for your {degreeLabel} pathway.
         </p>
       </div>
 
